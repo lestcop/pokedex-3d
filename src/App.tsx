@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getGen1, getIdsByType, TYPES } from './api/pokemon'
+import PokemonCard from './components/PokemonCard'
 
 export default function App() {
   const [search, setSearch] = useState('')
   const [type, setType] = useState<string | null>(null)
+  const [selected, setSelected] = useState<number | null>(null)
 
   const { data, isLoading, error } = useQuery({ queryKey: ['gen1'], queryFn: getGen1 })
   const { data: typeIds } = useQuery({
@@ -41,13 +43,14 @@ export default function App() {
 
       <ul className="grid grid-cols-3 md:grid-cols-6 gap-3">
         {list.map(p => (
-          <li key={p.id} className="rounded-xl bg-slate-100 p-2 text-center">
-            <img src={p.image} alt={p.name} loading="lazy" className="w-full" />
-            <p className="text-xs text-slate-500">#{String(p.id).padStart(3, '0')}</p>
-            <p className="capitalize font-medium">{p.name}</p>
-          </li>
-        ))}
+  <li key={p.id} onClick={() => setSelected(p.id)} className="cursor-pointer rounded-xl bg-slate-100 p-2 text-center">
+    <img src={p.image} alt={p.name} loading="lazy" className="w-full" />
+    <p className="text-xs text-slate-500">#{String(p.id).padStart(3, '0')}</p>
+    <p className="capitalize font-medium">{p.name}</p>
+  </li>
+))}
       </ul>
+      {selected && <PokemonCard id={selected} onClose={() => setSelected(null)} onNav={setSelected} />}
     </main>
   )
 }
