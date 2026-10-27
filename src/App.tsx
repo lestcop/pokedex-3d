@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getGen1, getIdsByType, TYPES } from './api/pokemon'
 import PokemonCard from './components/PokemonCard'
+import World from './components/World'
 
 export default function App() {
   const [search, setSearch] = useState('')
   const [type, setType] = useState<string | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
+  const [world, setWorld] = useState(false)
 
   const { data, isLoading, error } = useQuery({ queryKey: ['gen1'], queryFn: getGen1 })
   const { data: typeIds } = useQuery({
@@ -15,6 +17,7 @@ export default function App() {
     enabled: !!type,
   })
 
+  if (world) return <World onExit={() => setWorld(false)} />
   if (isLoading) return <p className="p-4">Cargando… ⏳</p>
   if (error) return <p className="p-4 text-red-500">{error.message}</p>
 
@@ -25,7 +28,12 @@ export default function App() {
 
   return (
     <main className="p-4">
-      <h1 className="text-3xl font-bold mb-4">🔴 Pokédex 3D</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-3xl font-bold">🔴 Pokédex 3D</h1>
+        <button onClick={() => setWorld(true)} className="rounded-full bg-red-500 text-white px-4 py-2 text-sm">
+          🗺️ Explorar
+        </button>
+      </div>
 
       <input
         value={search}
@@ -43,12 +51,12 @@ export default function App() {
 
       <ul className="grid grid-cols-3 md:grid-cols-6 gap-3">
         {list.map(p => (
-  <li key={p.id} onClick={() => setSelected(p.id)} className="cursor-pointer rounded-xl bg-slate-100 p-2 text-center">
-    <img src={p.image} alt={p.name} loading="lazy" className="w-full" />
-    <p className="text-xs text-slate-500">#{String(p.id).padStart(3, '0')}</p>
-    <p className="capitalize font-medium">{p.name}</p>
-  </li>
-))}
+          <li key={p.id} onClick={() => setSelected(p.id)} className="cursor-pointer rounded-xl bg-slate-100 p-2 text-center">
+            <img src={p.image} alt={p.name} loading="lazy" className="w-full" />
+            <p className="text-xs text-slate-500">#{String(p.id).padStart(3, '0')}</p>
+            <p className="capitalize font-medium">{p.name}</p>
+          </li>
+        ))}
       </ul>
       {selected && <PokemonCard id={selected} onClose={() => setSelected(null)} onNav={setSelected} />}
     </main>
