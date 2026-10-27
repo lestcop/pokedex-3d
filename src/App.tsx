@@ -1,16 +1,46 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getGen1 } from './api/pokemon'
+import { getGen1, getIdsByType, TYPES } from './api/pokemon'
 
 export default function App() {
+  const [search, setSearch] = useState('')
+  const [type, setType] = useState<string | null>(null)
+
   const { data, isLoading, error } = useQuery({ queryKey: ['gen1'], queryFn: getGen1 })
+  const { data: typeIds } = useQuery({
+    queryKey: ['type', type],
+    queryFn: () => getIdsByType(type!),
+    enabled: !!type,
+  })
+
   if (isLoading) return <p className="p-4">Cargando… ⏳</p>
   if (error) return <p className="p-4 text-red-500">{error.message}</p>
+
+  const q = search.trim().toLowerCase()
+  const list = data!
+    .filter(p => p.name.includes(q) || String(p.id) === q.replace('#', '').replace(/^0+/, ''))
+    .filter(p => !type || typeIds?.has(p.id))
 
   return (
     <main className="p-4">
       <h1 className="text-3xl font-bold mb-4">🔴 Pokédex 3D</h1>
+
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="🔍 Buscar por nombre o #"
+        className="w-full mb-3 rounded-xl border px-3 py-2"
+      />
+
+      <div className="flex gap-2 overflow-x-auto mb-4 pb-1">
+        <button onClick={() => setType(null)} className={`px-3 py-1 rounded-full border ${!type ? 'bg-red-500 text-white' : ''}`}>Todos</button>
+        {TYPES.map(t => (
+          <button key={t} onClick={() => setType(t)} className={`px-3 py-1 rounded-full border capitalize whitespace-nowrap ${type === t ? 'bg-red-500 text-white' : ''}`}>{t}</button>
+        ))}
+      </div>
+
       <ul className="grid grid-cols-3 md:grid-cols-6 gap-3">
-        {data!.map(p => (
+        {list.map(p => (
           <li key={p.id} className="rounded-xl bg-slate-100 p-2 text-center">
             <img src={p.image} alt={p.name} loading="lazy" className="w-full" />
             <p className="text-xs text-slate-500">#{String(p.id).padStart(3, '0')}</p>
