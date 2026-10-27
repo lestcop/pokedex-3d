@@ -36,7 +36,7 @@ type ApiPokemon = {
   cries: { latest: string }
   types: { type: Named }[]
   stats: { base_stat: number; stat: Named }[]
-  abilities: { ability: Named; is_hidden: boolean }[]
+  abilities: { ability: Named & { url: string }; is_hidden: boolean }[]
 }
 
 type ApiSpecies = {
@@ -52,6 +52,12 @@ export async function getPokemon(id: number): Promise<PokemonDetail> {
     fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r => r.json()),
     fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`).then(r => r.json()),
   ])
+  const abilities = await Promise.all(
+  p.abilities.map(async a => {
+    const ab: { names: (Lang & { name: string })[] } = await fetch(a.ability.url).then(r => r.json())
+    return { name: es(ab.names)?.name ?? a.ability.name, hidden: a.is_hidden }
+  }),
+)
   return {
     id,
     name: p.name,
@@ -61,7 +67,7 @@ export async function getPokemon(id: number): Promise<PokemonDetail> {
     height: p.height / 10,
     weight: p.weight / 10,
     stats: p.stats.map(st => ({ name: st.stat.name, value: st.base_stat })),
-    abilities: p.abilities.map(a => ({ name: a.ability.name, hidden: a.is_hidden })),
+    abilities,
     genus: es(s.genera)?.genus ?? '',
     description: (es(s.flavor_text_entries)?.flavor_text ?? '').replace(/\s+/g, ' '),
     habitat: s.habitat?.name ?? 'desconocido',

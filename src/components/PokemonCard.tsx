@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { getPokemon } from '../api/pokemon'
+import { TYPE_INFO, HABITAT_ES } from '../data/types'
 
 const STAT: Record<string, string> = {
   hp: 'PS', attack: 'Atq', defense: 'Def',
@@ -13,7 +14,11 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-10" onClick={onClose}>
-      <div className="bg-white w-full md:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-2xl p-4" onClick={e => e.stopPropagation()}>
+      <div
+  className="bg-white w-full md:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-2xl p-4"
+  onClick={e => e.stopPropagation()}
+  style={p ? { background: `linear-gradient(${TYPE_INFO[p.types[0]].color}55, transparent 40%), white` } : undefined}
+>
         {isLoading || !p ? <p>Cargando… ⏳</p> : (
           <>
             <div className="flex justify-between text-sm">
@@ -26,11 +31,15 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
               {p.name} <button onClick={() => new Audio(p.cry).play()}>🔊</button>
             </h2>
             <p className="text-center text-slate-500">{p.genus}</p>
-            <div className="flex gap-2 justify-center my-2">
-              {p.types.map(t => <span key={t} className="px-3 py-1 rounded-full bg-slate-200 capitalize text-sm">{t}</span>)}
-            </div>
+           <div className="flex gap-2 justify-center my-2">
+  {p.types.map(t => (
+    <span key={t} className="px-3 py-1 rounded-full text-white text-sm" style={{ background: TYPE_INFO[t].color }}>
+      {TYPE_INFO[t].es}
+    </span>
+  ))}
+</div>
 
-            <p className="text-center text-sm">📏 {p.height} m · ⚖️ {p.weight} kg · 🌳 <span className="capitalize">{p.habitat}</span></p>
+            <p className="text-center text-sm">📏 {p.height} m · ⚖️ {p.weight} kg · 🌳 <span className="capitalize">{HABITAT_ES[p.habitat] ?? p.habitat}</span></p>
             <p className="my-3 italic text-sm">📖 {p.description}</p>
 
             <h3 className="font-semibold">📊 Stats</h3>
