@@ -27,7 +27,7 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
               <span className="text-slate-500">#{String(p.id).padStart(3, '0')}</span>
             </div>
 
-            <Pokemon3D key={p.id} url={p.image} />
+            <Pokemon3D key={p.id} url={p.image} color={TYPE_INFO[p.types[0]].color} />
 
             <h2 className="text-2xl font-bold capitalize text-center">
               {p.name} <button onClick={() => new Audio(p.cry).play()}>🔊</button>

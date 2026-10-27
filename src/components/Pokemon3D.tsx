@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber'
-import { Float, OrbitControls, useTexture } from '@react-three/drei'
+import { Float, OrbitControls, Sparkles, useTexture } from '@react-three/drei'
 import { Suspense } from 'react'
 
 function ArtworkPlane({ url }: { url: string }) {
@@ -14,12 +14,15 @@ function ArtworkPlane({ url }: { url: string }) {
   )
 }
 
-export default function Pokemon3D({ url }: { url: string }) {
+type Props = { url: string; color: string }
+
+export default function Pokemon3D({ url, color }: Props) {
   return (
     <div className="h-64 w-full">
       <Canvas camera={{ position: [0, 0, 4], fov: 50 }}>
         <ambientLight intensity={1.2} />
         <directionalLight position={[2, 3, 4]} intensity={1} />
+        <Sparkles count={40} scale={[4, 3, 1]} position={[0, 0, -1]} size={2} speed={0.3} opacity={0.6} color={color} />
         <Suspense fallback={null}>
           <ArtworkPlane url={url} />
         </Suspense>
