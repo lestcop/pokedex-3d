@@ -4,7 +4,6 @@ import { useQueries } from '@tanstack/react-query'
 import { Suspense } from 'react'
 import { getIdsByType } from '../api/pokemon'
 import Player from './Player'
-import WildPokemon from './WildPokemon'
 import Pokemon3DModel from './Pokemon3DModel'
 
 const KEYS = [
@@ -23,12 +22,13 @@ const ZONES = [
 const PER_ZONE = 6
 const FOG = '#dbeafe'
 
+// Posición fija dentro de su zona (márgenes para no pisar el borde)
 function spot(id: number, zoneX: number): [number, number, number] {
   const r1 = Math.sin(id * 12.9898) * 43758.5453
   const r2 = Math.sin(id * 78.233) * 12345.6789
   const fx = r1 - Math.floor(r1)
   const fz = r2 - Math.floor(r2)
-  return [zoneX + (fx - 0.5) * 13, 0.9, (fz - 0.5) * 40]
+  return [zoneX + (fx - 0.5) * 12, 0, (fz - 0.5) * 36]
 }
 
 export default function World({ onExit }: { onExit: () => void }) {
@@ -37,13 +37,19 @@ export default function World({ onExit }: { onExit: () => void }) {
     queries: allTypes.map(t => ({ queryKey: ['type', t], queryFn: () => getIdsByType(t) })),
   })
 
+  // Cada Pokémon aparece una sola vez, en la primera zona que le corresponda
+  const used = new Set<number>()
   const wild = ZONES.flatMap(z => {
-    const ids = new Set<number>()
+    const ids: number[] = []
     z.types.forEach(t => {
-      const res = results[allTypes.indexOf(t)].data
-      res?.forEach(id => ids.add(id))
+      results[allTypes.indexOf(t)].data?.forEach(id => {
+        if (!used.has(id) && ids.length < PER_ZONE) {
+          used.add(id)
+          ids.push(id)
+        }
+      })
     })
-    return [...ids].slice(0, PER_ZONE).map(id => ({ id, position: spot(id, z.x) }))
+    return ids.map(id => ({ id, position: spot(id, z.x) }))
   })
 
   return (
@@ -71,10 +77,11 @@ export default function World({ onExit }: { onExit: () => void }) {
             </mesh>
           ))}
 
-          <Suspense fallback={null}>
-            {wild.filter(w => w.id !== 1).map(w => <WildPokemon key={w.id} id={w.id} position={w.position} />)}
-            <Pokemon3DModel id={1} position={[-14, 0, -3]} />
-          </Suspense>
+          {wild.map(w => (
+            <Suspense key={w.id} fallback={null}>
+              <Pokemon3DModel id={w.id} position={w.position} />
+            </Suspense>
+          ))}
 
           <Player />
         </Canvas>
