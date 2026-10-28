@@ -29,12 +29,19 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-sm md:max-w-md max-h-[85vh] md:max-h-[94vh] overflow-y-auto overflow-x-hidden rounded-4xl shadow-2xl"
-        style={{ background: soft(color) }}
+        className="relative w-full max-w-sm md:max-w-md max-h-[85vh] md:max-h-[94vh] overflow-y-auto overflow-x-hidden rounded-4xl shadow-2xl transition-colors duration-500"
+        style={{ background: p ? soft(color) : '#faf9f5' }}
         onClick={e => e.stopPropagation()}
       >
         {isLoading || !p ? (
-          <div className="h-80 grid place-items-center font-serif text-ink/60">Cargando…</div>
+          <div className="h-120 flex flex-col items-center justify-center gap-4">
+            <div className="relative">
+              <span className="absolute inset-0 rounded-full bg-clay/20 animate-ping" />
+              <Pokeball className="relative w-16 h-16 text-clay animate-spin [animation-duration:1.4s]" />
+            </div>
+            <p className="font-serif text-lg">Buscando en la Pokédex…</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted">N.º {String(id).padStart(3, '0')}</p>
+          </div>
         ) : (
           <>
             <div className="relative px-6 pt-5">
