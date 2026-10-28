@@ -20,6 +20,8 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
   const [tab, setTab] = useState<Tab>('Info')
   const color = p ? TYPE_INFO[p.types[0]].color : '#d97757'
   const total = p?.stats.reduce((a, s) => a + s.value, 0) ?? 0
+  const len = p?.description.length ?? 0
+  const descSize = len > 150 ? 'text-sm' : len > 110 ? 'text-[15px]' : 'text-base md:text-lg'
 
   return (
     <div
@@ -89,52 +91,54 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
                 ))}
               </div>
 
-              {tab === 'Info' && (
-                <div>
-                  <p className="font-serif text-base md:text-lg leading-relaxed mb-5">{p.description}</p>
-                  <dl className="grid grid-cols-[7rem_1fr] gap-y-3 text-sm">
-                    <dt className="text-muted">Especie</dt><dd>{p.genus}</dd>
-                    <dt className="text-muted">Altura</dt><dd>{p.height} m</dd>
-                    <dt className="text-muted">Peso</dt><dd>{p.weight} kg</dd>
-                    <dt className="text-muted">Hábitat</dt>
-                    <dd className="first-letter:uppercase">{HABITAT_ES[p.habitat] ?? p.habitat}</dd>
-                  </dl>
-                </div>
-              )}
-
-              {tab === 'Stats' && (
-                <div className="space-y-3">
-                  {p.stats.map(s => (
-                    <div key={s.name} className="flex items-center gap-3 text-sm">
-                      <span className="w-20 text-muted">{STAT[s.name]}</span>
-                      <span className="w-8 text-right font-medium">{s.value}</span>
-                      <div className="flex-1 h-1.5 bg-line rounded-full">
-                        <div
-                          className="h-1.5 rounded-full"
-                          style={{ width: `${Math.min(s.value, 150) / 1.5}%`, background: s.value >= 60 ? '#788c5d' : '#d97757' }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex items-center gap-3 text-sm pt-2 border-t border-line">
-                    <span className="w-20 text-muted">Total</span>
-                    <span className="w-8 text-right font-semibold">{total}</span>
+              <div className="h-64 overflow-hidden">
+                {tab === 'Info' && (
+                  <div>
+                    <p className={`font-serif ${descSize} leading-relaxed mb-5`}>{p.description}</p>
+                    <dl className="grid grid-cols-[7rem_1fr] gap-y-3 text-sm">
+                      <dt className="text-muted">Especie</dt><dd>{p.genus}</dd>
+                      <dt className="text-muted">Altura</dt><dd>{p.height} m</dd>
+                      <dt className="text-muted">Peso</dt><dd>{p.weight} kg</dd>
+                      <dt className="text-muted">Hábitat</dt>
+                      <dd className="first-letter:uppercase">{HABITAT_ES[p.habitat] ?? p.habitat}</dd>
+                    </dl>
                   </div>
-                </div>
-              )}
+                )}
 
-              {tab === 'Habilidades' && (
-                <ul className="space-y-2">
-                  {p.abilities.map(a => (
-                    <li key={a.name} className="flex justify-between items-center rounded-2xl bg-sand px-4 py-3">
-                      <span className="font-serif text-lg capitalize">{a.name.replace('-', ' ')}</span>
-                      {a.hidden && <span className="text-xs text-muted">oculta</span>}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                {tab === 'Stats' && (
+                  <div className="space-y-3">
+                    {p.stats.map(s => (
+                      <div key={s.name} className="flex items-center gap-3 text-sm">
+                        <span className="w-20 text-muted">{STAT[s.name]}</span>
+                        <span className="w-8 text-right font-medium">{s.value}</span>
+                        <div className="flex-1 h-1.5 bg-line rounded-full">
+                          <div
+                            className="h-1.5 rounded-full"
+                            style={{ width: `${Math.min(s.value, 150) / 1.5}%`, background: s.value >= 60 ? '#788c5d' : '#d97757' }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-3 text-sm pt-2 border-t border-line">
+                      <span className="w-20 text-muted">Total</span>
+                      <span className="w-8 text-right font-semibold">{total}</span>
+                    </div>
+                  </div>
+                )}
 
-              <div className="flex justify-between mt-8 pt-4 border-t border-line text-sm">
+                {tab === 'Habilidades' && (
+                  <ul className="space-y-2">
+                    {p.abilities.map(a => (
+                      <li key={a.name} className="flex justify-between items-center rounded-2xl bg-sand px-4 py-3">
+                        <span className="font-serif text-lg capitalize">{a.name.replace('-', ' ')}</span>
+                        {a.hidden && <span className="text-xs text-muted">oculta</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="flex justify-between mt-4 pt-4 border-t border-line text-sm">
                 <button disabled={p.id === 1} onClick={() => onNav(p.id - 1)} className="hover:text-clay disabled:opacity-30">← #{p.id - 1}</button>
                 <button disabled={p.id === 151} onClick={() => onNav(p.id + 1)} className="hover:text-clay disabled:opacity-30">#{p.id + 1} →</button>
               </div>
