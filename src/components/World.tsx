@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import { getIdsByType } from '../api/pokemon'
 import Player from './Player'
 import WildPokemon from './WildPokemon'
+import Pokemon3DModel from './Pokemon3DModel'
 
 const KEYS = [
   { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
@@ -20,8 +21,8 @@ const ZONES = [
 ]
 
 const PER_ZONE = 6
+const FOG = '#dbeafe'
 
-// Posición fija por Pokémon (no cambia en cada render)
 function spot(id: number, zoneX: number): [number, number, number] {
   const r1 = Math.sin(id * 12.9898) * 43758.5453
   const r2 = Math.sin(id * 78.233) * 12345.6789
@@ -52,18 +53,29 @@ export default function World({ onExit }: { onExit: () => void }) {
       </button>
       <KeyboardControls map={KEYS}>
         <Canvas shadows camera={{ position: [0, 4, 7], fov: 60 }}>
+          <color attach="background" args={[FOG]} />
+          <fog attach="fog" args={[FOG, 15, 45]} />
           <Sky sunPosition={[100, 20, 100]} />
           <ambientLight intensity={0.6} />
           <directionalLight position={[10, 15, 10]} intensity={1.2} castShadow />
+
+          <mesh rotation-x={-Math.PI / 2} position={[0, -0.01, 0]} receiveShadow>
+            <planeGeometry args={[300, 300]} />
+            <meshStandardMaterial color="#86c27a" />
+          </mesh>
+
           {ZONES.map(z => (
             <mesh key={z.name} rotation-x={-Math.PI / 2} position={[z.x, 0, 0]} receiveShadow>
               <planeGeometry args={[17, 50]} />
               <meshStandardMaterial color={z.color} />
             </mesh>
           ))}
+
           <Suspense fallback={null}>
-            {wild.map(w => <WildPokemon key={w.id} id={w.id} position={w.position} />)}
+            {wild.filter(w => w.id !== 1).map(w => <WildPokemon key={w.id} id={w.id} position={w.position} />)}
+            <Pokemon3DModel id={1} position={[-14, 0, -3]} />
           </Suspense>
+
           <Player />
         </Canvas>
       </KeyboardControls>
