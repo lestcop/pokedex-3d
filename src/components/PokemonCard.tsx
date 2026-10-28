@@ -24,19 +24,19 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
   return (
     <div className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-end md:items-center justify-center z-10" onClick={onClose}>
       <div
-        className="relative w-full md:max-w-md max-h-[94vh] overflow-y-auto overflow-x-hidden rounded-t-[2rem] md:rounded-[2rem]"
+        className="relative w-full md:max-w-md max-h-[85vh] md:max-h-[94vh] overflow-y-auto overflow-x-hidden rounded-t-4xl md:rounded-4xl"
         style={{ background: soft(color) }}
         onClick={e => e.stopPropagation()}
       >
         {isLoading || !p ? <p className="p-6 font-serif">Cargando…</p> : (
           <>
             <div className="relative px-6 pt-5">
-              <Pokeball className="absolute -right-10 top-24 w-64 text-paper/30" />
+              <Pokeball className="absolute -right-10 w-44 top-20 md:w-64 md:top-24 text-paper/30" />
               <div className="relative text-sm">
   <button onClick={onClose} className="text-ink/70 hover:text-ink">← Volver</button>
 </div>
               <div className="relative flex justify-between items-end mt-4">
-                <h2 className="font-serif text-4xl capitalize leading-none">{p.name}</h2>
+                <h2 className="font-serif text-3xl md:text-4xl capitalize leading-none">{p.name}</h2>
                 <span className="font-serif text-xl text-ink/60">#{String(p.id).padStart(3, '0')}</span>
               </div>
               <div className="relative flex items-center justify-between mt-3">
@@ -61,11 +61,11 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
               <img
                 src={p.image}
                 alt={p.name}
-                className="relative z-10 mx-auto w-56 h-56 object-contain -mb-12 drop-shadow-xl"
+                className="relative z-10 mx-auto w-36 h-36 -mb-8 md:w-56 md:h-56 md:-mb-12 object-contain drop-shadow-xl"
               />
             </div>
 
-            <div className="bg-paper rounded-t-4xl px-6 pt-14 pb-6">
+            <div className="bg-paper rounded-t-4xl px-6 pt-10 md:pt-14 pb-6">
               <div className="flex gap-6 border-b border-line mb-5">
                 {TABS.map(t => (
                   <button
@@ -82,7 +82,7 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
 
               {tab === 'Info' && (
                 <div>
-                  <p className="font-serif text-lg leading-relaxed mb-5">{p.description}</p>
+                  <p className="font-serif text-base md:text-lg leading-relaxed mb-5">{p.description}</p>
                   <dl className="grid grid-cols-[7rem_1fr] gap-y-3 text-sm">
                     <dt className="text-muted">Especie</dt><dd>{p.genus}</dd>
                     <dt className="text-muted">Altura</dt><dd>{p.height} m</dd>
