@@ -1,68 +1,133 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getPokemon } from '../api/pokemon'
 import { TYPE_INFO, HABITAT_ES } from '../data/types'
-import Pokemon3D from './Pokemon3D'
+import Pokeball from './Pokeball'
 
 const STAT: Record<string, string> = {
-  hp: 'PS', attack: 'Atq', defense: 'Def',
-  'special-attack': 'AtE', 'special-defense': 'DfE', speed: 'Vel',
+  hp: 'PS', attack: 'Ataque', defense: 'Defensa',
+  'special-attack': 'At. Esp.', 'special-defense': 'Def. Esp.', speed: 'Velocidad',
 }
+const TABS = ['Info', 'Stats', 'Habilidades'] as const
+type Tab = (typeof TABS)[number]
+
+const soft = (color: string, pct = 80) => `color-mix(in oklab, ${color} ${pct}%, #faf9f5)`
 
 type Props = { id: number; onClose: () => void; onNav: (id: number) => void }
 
 export default function PokemonCard({ id, onClose, onNav }: Props) {
   const { data: p, isLoading } = useQuery({ queryKey: ['pokemon', id], queryFn: () => getPokemon(id) })
+  const [tab, setTab] = useState<Tab>('Info')
+  const color = p ? TYPE_INFO[p.types[0]].color : '#d97757'
+  const total = p?.stats.reduce((a, s) => a + s.value, 0) ?? 0
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-10" onClick={onClose}>
+    <div className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-end md:items-center justify-center z-10" onClick={onClose}>
       <div
-        className="bg-white w-full md:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-2xl p-4"
+        className="relative w-full md:max-w-md max-h-[94vh] overflow-y-auto overflow-x-hidden rounded-t-[2rem] md:rounded-[2rem]"
+        style={{ background: soft(color) }}
         onClick={e => e.stopPropagation()}
-        style={p ? { background: `linear-gradient(${TYPE_INFO[p.types[0]].color}55, transparent 40%), white` } : undefined}
       >
-        {isLoading || !p ? <p>Cargando… ⏳</p> : (
+        {isLoading || !p ? <p className="p-6 font-serif">Cargando…</p> : (
           <>
-            <div className="flex justify-between text-sm">
-              <button onClick={onClose}>← Volver</button>
-              <span className="text-slate-500">#{String(p.id).padStart(3, '0')}</span>
-            </div>
-
-            <Pokemon3D key={p.id} url={p.image} color={TYPE_INFO[p.types[0]].color} />
-
-            <h2 className="text-2xl font-bold capitalize text-center">
-              {p.name} <button onClick={() => new Audio(p.cry).play()}>🔊</button>
-            </h2>
-            <p className="text-center text-slate-500">{p.genus}</p>
-            <div className="flex gap-2 justify-center my-2">
-              {p.types.map(t => (
-                <span key={t} className="px-3 py-1 rounded-full text-white text-sm" style={{ background: TYPE_INFO[t].color }}>
-                  {TYPE_INFO[t].es}
-                </span>
-              ))}
-            </div>
-
-            <p className="text-center text-sm">📏 {p.height} m · ⚖️ {p.weight} kg · 🌳 <span className="capitalize">{HABITAT_ES[p.habitat] ?? p.habitat}</span></p>
-            <p className="my-3 italic text-sm">📖 {p.description}</p>
-
-            <h3 className="font-semibold">📊 Stats</h3>
-            {p.stats.map(s => (
-              <div key={s.name} className="flex items-center gap-2 text-sm">
-                <span className="w-10">{STAT[s.name]}</span>
-                <span className="w-8 text-right">{s.value}</span>
-                <div className="flex-1 h-2 bg-slate-200 rounded">
-                  <div className="h-2 bg-red-500 rounded" style={{ width: `${Math.min(s.value, 150) / 1.5}%` }} />
-                </div>
+            <div className="relative px-6 pt-5">
+              <Pokeball className="absolute -right-10 top-24 w-64 text-paper/30" />
+              <div className="relative text-sm">
+  <button onClick={onClose} className="text-ink/70 hover:text-ink">← Volver</button>
+</div>
+              <div className="relative flex justify-between items-end mt-4">
+                <h2 className="font-serif text-4xl capitalize leading-none">{p.name}</h2>
+                <span className="font-serif text-xl text-ink/60">#{String(p.id).padStart(3, '0')}</span>
               </div>
-            ))}
+              <div className="relative flex items-center justify-between mt-3">
+  <div className="flex gap-2">
+    {p.types.map(t => (
+      <span key={t} className="px-3 py-1 rounded-full bg-paper/50 text-sm">{TYPE_INFO[t].es}</span>
+    ))}
+  </div>
+  <button
+    onClick={() => new Audio(p.cry).play()}
+    className="group inline-flex items-center gap-2 pl-2 pr-3.5 py-1 rounded-full bg-ink text-paper text-sm hover:bg-clay transition-colors"
+  >
+    <span className="grid place-items-center w-6 h-6 rounded-full bg-paper/15">
+      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" />
+        <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
+      </svg>
+    </span>
+    Escuchar
+  </button>
+</div>
+              <img
+                src={p.image}
+                alt={p.name}
+                className="relative z-10 mx-auto w-56 h-56 object-contain -mb-12 drop-shadow-xl"
+              />
+            </div>
 
-            <h3 className="font-semibold mt-3">✨ Habilidades</h3>
-            <ul className="text-sm capitalize">
-              {p.abilities.map(a => <li key={a.name}>{a.name.replace('-', ' ')} {a.hidden && '(oculta)'}</li>)}
-            </ul>
+            <div className="bg-paper rounded-t-4xl px-6 pt-14 pb-6">
+              <div className="flex gap-6 border-b border-line mb-5">
+                {TABS.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className={`pb-3 -mb-px text-sm border-b-2 transition-colors ${
+                      tab === t ? 'border-clay text-ink font-medium' : 'border-transparent text-muted hover:text-ink'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
 
-            <div className="flex justify-between mt-4">
-              <button disabled={p.id === 1} onClick={() => onNav(p.id - 1)} className="disabled:opacity-30">← #{p.id - 1}</button>
-              <button disabled={p.id === 151} onClick={() => onNav(p.id + 1)} className="disabled:opacity-30">#{p.id + 1} →</button>
+              {tab === 'Info' && (
+                <div>
+                  <p className="font-serif text-lg leading-relaxed mb-5">{p.description}</p>
+                  <dl className="grid grid-cols-[7rem_1fr] gap-y-3 text-sm">
+                    <dt className="text-muted">Especie</dt><dd>{p.genus}</dd>
+                    <dt className="text-muted">Altura</dt><dd>{p.height} m</dd>
+                    <dt className="text-muted">Peso</dt><dd>{p.weight} kg</dd>
+                    <dt className="text-muted">Hábitat</dt><dd className="first-letter:uppercase">{HABITAT_ES[p.habitat] ?? p.habitat}</dd>
+                  </dl>
+                </div>
+              )}
+
+              {tab === 'Stats' && (
+                <div className="space-y-3">
+                  {p.stats.map(s => (
+                    <div key={s.name} className="flex items-center gap-3 text-sm">
+                      <span className="w-20 text-muted">{STAT[s.name]}</span>
+                      <span className="w-8 text-right font-medium">{s.value}</span>
+                      <div className="flex-1 h-1.5 bg-line rounded-full">
+                        <div
+                          className="h-1.5 rounded-full"
+                          style={{ width: `${Math.min(s.value, 150) / 1.5}%`, background: s.value >= 60 ? '#788c5d' : '#d97757' }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-3 text-sm pt-2 border-t border-line">
+                    <span className="w-20 text-muted">Total</span>
+                    <span className="w-8 text-right font-semibold">{total}</span>
+                  </div>
+                </div>
+              )}
+
+              {tab === 'Habilidades' && (
+                <ul className="space-y-2">
+                  {p.abilities.map(a => (
+                    <li key={a.name} className="flex justify-between items-center rounded-2xl bg-sand px-4 py-3">
+                      <span className="font-serif text-lg capitalize">{a.name.replace('-', ' ')}</span>
+                      {a.hidden && <span className="text-xs text-muted">oculta</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="flex justify-between mt-8 pt-4 border-t border-line text-sm">
+                <button disabled={p.id === 1} onClick={() => onNav(p.id - 1)} className="hover:text-clay disabled:opacity-30">← #{p.id - 1}</button>
+                <button disabled={p.id === 151} onClick={() => onNav(p.id + 1)} className="hover:text-clay disabled:opacity-30">#{p.id + 1} →</button>
+              </div>
             </div>
           </>
         )}
