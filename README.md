@@ -26,6 +26,8 @@ Una Pokédex con estilo **editorial cálido**: papel crema, tinta oscura, un sol
 | Ficha con descripción, stats y habilidades | Modelos 3D de Pokémon con animación |
 | Grito de cada Pokémon 🔊 | Controles WASD, cámara en tercera persona y colisiones |
 
+🔗 **[Ver en vivo →](https://pokedex-3d-one.vercel.app)**
+
 ## 🧩 Funcionalidades
 
 - 🔍 Búsqueda por nombre o número
