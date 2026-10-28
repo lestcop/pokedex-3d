@@ -83,7 +83,7 @@ export default function World({ onExit }: { onExit: () => void }) {
             </Suspense>
           ))}
 
-          <Player />
+          <Player obstacles={wild.map(w => w.position)} />
         </Canvas>
       </KeyboardControls>
     </div>
