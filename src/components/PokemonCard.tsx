@@ -22,42 +22,51 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
   const total = p?.stats.reduce((a, s) => a + s.value, 0) ?? 0
 
   return (
-    <div className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-end md:items-center justify-center z-10" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-center justify-center p-4 z-10"
+      onClick={onClose}
+    >
       <div
-        className="relative w-full md:max-w-md max-h-[85vh] md:max-h-[94vh] overflow-y-auto overflow-x-hidden rounded-t-4xl md:rounded-4xl"
+        className="relative w-full max-w-sm md:max-w-md max-h-[85vh] md:max-h-[94vh] overflow-y-auto overflow-x-hidden rounded-4xl shadow-2xl"
         style={{ background: soft(color) }}
         onClick={e => e.stopPropagation()}
       >
-        {isLoading || !p ? <p className="p-6 font-serif">Cargando…</p> : (
+        {isLoading || !p ? (
+          <div className="h-80 grid place-items-center font-serif text-ink/60">Cargando…</div>
+        ) : (
           <>
             <div className="relative px-6 pt-5">
               <Pokeball className="absolute -right-10 w-44 top-20 md:w-64 md:top-24 text-paper/30" />
+
               <div className="relative text-sm">
-  <button onClick={onClose} className="text-ink/70 hover:text-ink">← Volver</button>
-</div>
+                <button onClick={onClose} className="text-ink/70 hover:text-ink">← Volver</button>
+              </div>
+
               <div className="relative flex justify-between items-end mt-4">
                 <h2 className="font-serif text-3xl md:text-4xl capitalize leading-none">{p.name}</h2>
                 <span className="font-serif text-xl text-ink/60">#{String(p.id).padStart(3, '0')}</span>
               </div>
+
               <div className="relative flex items-center justify-between mt-3">
-  <div className="flex gap-2">
-    {p.types.map(t => (
-      <span key={t} className="px-3 py-1 rounded-full bg-paper/50 text-sm">{TYPE_INFO[t].es}</span>
-    ))}
-  </div>
-  <button
-    onClick={() => new Audio(p.cry).play()}
-    className="group inline-flex items-center gap-2 pl-2 pr-3.5 py-1 rounded-full bg-ink text-paper text-sm hover:bg-clay transition-colors"
-  >
-    <span className="grid place-items-center w-6 h-6 rounded-full bg-paper/15">
-      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" />
-        <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
-      </svg>
-    </span>
-    Escuchar
-  </button>
-</div>
+                <div className="flex gap-2">
+                  {p.types.map(t => (
+                    <span key={t} className="px-3 py-1 rounded-full bg-paper/50 text-sm">{TYPE_INFO[t].es}</span>
+                  ))}
+                </div>
+                <button
+                  onClick={() => new Audio(p.cry).play()}
+                  className="inline-flex items-center gap-2 pl-2 pr-3.5 py-1 rounded-full bg-ink text-paper text-sm hover:bg-clay transition-colors"
+                >
+                  <span className="grid place-items-center w-6 h-6 rounded-full bg-paper/15">
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" />
+                      <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
+                    </svg>
+                  </span>
+                  Escuchar
+                </button>
+              </div>
+
               <img
                 src={p.image}
                 alt={p.name}
@@ -65,7 +74,7 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
               />
             </div>
 
-            <div className="bg-paper rounded-t-4xl px-6 pt-10 md:pt-14 pb-6">
+            <div className="bg-paper rounded-4xl px-6 pt-10 md:pt-14 pb-6">
               <div className="flex gap-6 border-b border-line mb-5">
                 {TABS.map(t => (
                   <button
@@ -87,7 +96,8 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
                     <dt className="text-muted">Especie</dt><dd>{p.genus}</dd>
                     <dt className="text-muted">Altura</dt><dd>{p.height} m</dd>
                     <dt className="text-muted">Peso</dt><dd>{p.weight} kg</dd>
-                    <dt className="text-muted">Hábitat</dt><dd className="first-letter:uppercase">{HABITAT_ES[p.habitat] ?? p.habitat}</dd>
+                    <dt className="text-muted">Hábitat</dt>
+                    <dd className="first-letter:uppercase">{HABITAT_ES[p.habitat] ?? p.habitat}</dd>
                   </dl>
                 </div>
               )}
