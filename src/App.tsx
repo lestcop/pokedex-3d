@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getIdsByType } from './api/pokemon'
 import { TYPE_INFO } from './data/types'
 import PokemonCard from './components/PokemonCard'
 import Pokeball from './components/Pokeball'
 import World from './components/World'
+import Landing from './components/Landing'
 
 const soft = (color: string, pct = 50) => `color-mix(in oklab, ${color} ${pct}%, #faf9f5)`
 const ART = (id: number) =>
@@ -19,11 +20,38 @@ async function getKanto(): Promise<Entry[]> {
   return json.results.map((p, i) => ({ id: i + 1, name: p.name }))
 }
 
+// Rutas por hash: ''  -> landing | #/pokedex -> lista | #/pokedex/25 -> detalle
+function parseHash() {
+  const [, page, id] = window.location.hash.split('/')
+  return { page: page === 'pokedex' ? 'pokedex' : 'landing', id: id ? Number(id) : null }
+}
+
+function useRoute() {
+  const [route, setRoute] = useState(parseHash)
+  useEffect(() => {
+    const onChange = () => {
+      setRoute(parseHash())
+    }
+    window.addEventListener('hashchange', onChange)
+    return () => window.removeEventListener('hashchange', onChange)
+  }, [])
+  return route
+}
+
+const go = (hash: string) => {
+  window.location.hash = hash
+}
+
 export default function App() {
+  const route = useRoute()
   const [search, setSearch] = useState('')
   const [type, setType] = useState<string | null>(null)
-  const [selected, setSelected] = useState<number | null>(null)
   const [world, setWorld] = useState(false)
+  const selected = route.id && route.id >= 1 && route.id <= 151 ? route.id : null
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [route.page])
 
   const { data: list = [], isLoading } = useQuery({ queryKey: ['kanto'], queryFn: getKanto, staleTime: Infinity })
 
@@ -47,22 +75,27 @@ export default function App() {
     })
   }, [list, search, type, typesMap])
 
+  if (route.page === 'landing') return <Landing onEnter={() => go('/pokedex')} />
   if (world) return <World onExit={() => setWorld(false)} />
 
   return (
     <main className="max-w-5xl mx-auto px-4 md:px-8 pb-16">
-      <header className="pt-10 md:pt-16 pb-8">
-        <div className="flex justify-between items-start gap-4">
-          <h1 className="font-serif text-5xl md:text-7xl tracking-tight">
-            Pokédex<span className="text-clay">.</span>
-          </h1>
-          <button
-            onClick={() => setWorld(true)}
-            className="hidden md:inline-flex items-center gap-2 mt-3 px-5 py-2.5 rounded-full border border-ink text-sm hover:bg-ink hover:text-paper transition-colors"
-          >
-            Explorar el mundo →
-          </button>
-        </div>
+      <nav className="flex justify-between items-center py-6">
+        <button onClick={() => go('')} className="font-serif text-2xl">
+          Pokelex<span className="text-clay">.</span>
+        </button>
+        <button
+          onClick={() => setWorld(true)}
+          className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-ink text-sm hover:bg-ink hover:text-paper transition-colors"
+        >
+          Explorar el mundo →
+        </button>
+      </nav>
+
+      <header className="pt-4 md:pt-8 pb-8">
+        <h1 className="font-serif text-5xl md:text-7xl tracking-tight">
+          Pokédex<span className="text-clay">.</span>
+        </h1>
         <p className="mt-5 max-w-xl font-serif text-xl md:text-2xl leading-snug text-ink/80">
           Los 151 Pokémon de Kanto, <em className="text-clay not-italic">reimaginados</em> como un
           cuaderno de campo: busca, compara sus estadísticas y, desde la computadora,
@@ -119,7 +152,7 @@ export default function App() {
             return (
               <li key={p.id}>
                 <button
-                  onClick={() => setSelected(p.id)}
+                  onClick={() => go(`/pokedex/${p.id}`)}
                   className="relative w-full h-32 md:h-36 overflow-hidden rounded-3xl p-4 text-left hover:-translate-y-0.5 transition-transform"
                   style={{ background: soft(color) }}
                 >
@@ -148,34 +181,41 @@ export default function App() {
         </ul>
       )}
 
-      {selected && <PokemonCard id={selected} onClose={() => setSelected(null)} onNav={setSelected} />}
+      {selected && (
+        <PokemonCard
+          id={selected}
+          onClose={() => go('/pokedex')}
+          onNav={id => go(`/pokedex/${id}`)}
+        />
+      )}
+
       <footer className="mt-20 pt-8 border-t border-line text-sm text-muted">
-  <div className="flex flex-col md:flex-row md:justify-between gap-6">
-    <div>
-      <p className="font-serif text-2xl text-ink">
-        Pokédex<span className="text-clay">.</span>
-      </p>
-      <p className="mt-2 max-w-sm">
-        Un proyecto personal sin fines de lucro, hecho con calma y mucho café en Loja, Ecuador ☕
-      </p>
-    </div>
-    <div className="flex gap-10">
-      <div className="space-y-1.5">
-        <p className="text-xs uppercase tracking-[0.2em] text-ink">Datos</p>
-        <a href="https://pokeapi.co" target="_blank" rel="noreferrer" className="block hover:text-clay">PokéAPI</a>
-        <a href="https://github.com/Pokemon-3D-api/assets" target="_blank" rel="noreferrer" className="block hover:text-clay">Pokémon 3D API</a>
-      </div>
-      <div className="space-y-1.5">
-        <p className="text-xs uppercase tracking-[0.2em] text-ink">Autor</p>
-        <a href="https://github.com/lestcop" target="_blank" rel="noreferrer" className="block hover:text-clay">Lester Ojeda</a>
-        <a href="https://github.com/lestcop" target="_blank" rel="noreferrer" className="block hover:text-clay">GitHub</a>
-      </div>
-    </div>
-  </div>
-  <p className="mt-10 pb-2 text-xs">
-    © {new Date().getFullYear()} · Pokémon y sus nombres son marcas de Nintendo, Game Freak y Creatures. Fan project sin afiliación oficial.
-  </p>
-</footer>
+        <div className="flex flex-col md:flex-row md:justify-between gap-6">
+          <div>
+            <p className="font-serif text-2xl text-ink">
+              Pokelex<span className="text-clay">.</span>
+            </p>
+            <p className="mt-2 max-w-sm">
+              Un proyecto personal sin fines de lucro, hecho con calma y mucho café en Loja, Ecuador ☕
+            </p>
+          </div>
+          <div className="flex gap-10">
+            <div className="space-y-1.5">
+              <p className="text-xs uppercase tracking-[0.2em] text-ink">Datos</p>
+              <a href="https://pokeapi.co" target="_blank" rel="noreferrer" className="block hover:text-clay">PokéAPI</a>
+              <a href="https://github.com/Pokemon-3D-api/assets" target="_blank" rel="noreferrer" className="block hover:text-clay">Pokémon 3D API</a>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs uppercase tracking-[0.2em] text-ink">Autor</p>
+              <a href="https://github.com/lestcop" target="_blank" rel="noreferrer" className="block hover:text-clay">Lester Ojeda</a>
+              <a href="https://github.com/lestcop" target="_blank" rel="noreferrer" className="block hover:text-clay">GitHub</a>
+            </div>
+          </div>
+        </div>
+        <p className="mt-10 pb-2 text-xs">
+          © {new Date().getFullYear()} Pokelex · Pokémon y sus nombres son marcas de Nintendo, Game Freak y Creatures. Fan project sin afiliación oficial.
+        </p>
+      </footer>
     </main>
   )
 }
