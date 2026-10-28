@@ -1,75 +1,75 @@
-# React + TypeScript + Vite
+<div align="center">
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Pokédex<span>.</span>
 
-Currently, two official plugins are available:
+**Los 151 Pokémon de Kanto, reimaginados como un cuaderno de campo.**
+Busca, compara sus estadísticas y, desde la computadora, sal a encontrarlos en un mundo 3D.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![React](https://img.shields.io/badge/React-19-141413?style=flat-square&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-141413?style=flat-square&logo=typescript&logoColor=3178C6)
+![Vite](https://img.shields.io/badge/Vite-141413?style=flat-square&logo=vite&logoColor=646CFF)
+![Tailwind](https://img.shields.io/badge/Tailwind-v4-141413?style=flat-square&logo=tailwindcss&logoColor=38BDF8)
+![Three.js](https://img.shields.io/badge/Three.js-R3F-141413?style=flat-square&logo=threedotjs&logoColor=white)
+![Status](https://img.shields.io/badge/estado-en%20desarrollo-d97757?style=flat-square)
 
-## React Compiler
+</div>
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## ✨ Qué es
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Una Pokédex con estilo **editorial cálido**: papel crema, tinta oscura, un solo acento terracota y tipografía serif. Tiene dos experiencias:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| 📱 Móvil — Pokédex 2D | 🖥️ Computadora — Mundo 3D |
+|---|---|
+| Tarjetas por tipo, búsqueda y filtros | Mundo explorable con 3 zonas (bosque, agua, cueva) |
+| Ficha con descripción, stats y habilidades | Modelos 3D de Pokémon con animación |
+| Grito de cada Pokémon 🔊 | Controles WASD, cámara en tercera persona y colisiones |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🧩 Funcionalidades
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- 🔍 Búsqueda por nombre o número
+- 🏷️ Filtro por los 18 tipos, cada uno con su color
+- 📖 Ficha con pestañas: **Info**, **Stats** y **Habilidades**
+- 🌍 Mundo 3D con Pokémon salvajes en su hábitat (solo en computadora)
+- 🎯 *Próximamente:* escanear y capturar Pokémon y guardar el progreso
 
+## 🛠️ Stack
+
+- **React + TypeScript + Vite**
+- **Tailwind CSS v4** con tokens propios (`paper`, `ink`, `clay`…)
+- **TanStack Query** para los datos y la caché
+- **React Three Fiber + drei** para el mundo 3D
+- Tipografías **Fraunces** e **Inter**
+
+## 🚀 Correr en local
+
+```bash
+git clone https://github.com/lestcop/pokedex-3d.git
+cd pokedex-3d
+pnpm install
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## 🗺️ Hoja de ruta
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- [x] Fase 1 · Pokédex 2D con datos de PokéAPI
+- [x] Fase 2 · Ficha con visor 3D
+- [x] Fase 3 · Mundo explorable, controles y colisiones
+- [x] Rediseño editorial cálido
+- [ ] Fase 4 · Escanear, capturar y guardar progreso (Zustand + Supabase)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🙏 Créditos
 
-```
+- Datos: [PokéAPI](https://pokeapi.co)
+- Modelos 3D: [Pokémon 3D API](https://github.com/Pokemon-3D-api/assets)
+
+## ⚖️ Aviso
+
+Proyecto personal **sin fines de lucro**. Pokémon y sus nombres son marcas de Nintendo, Game Freak y Creatures. Este es un fan project sin afiliación oficial.
+
+---
+
+<div align="center">
+Hecho con ☕ en Loja, Ecuador · <a href="https://github.com/lestcop">@lestcop</a>
+</div>
