@@ -26,6 +26,8 @@ export type PokemonDetail = {
   stats: { name: string; value: number }[]
   abilities: { name: string; hidden: boolean }[]
   genus: string; description: string; habitat: string
+  shiny: string
+  evolution: { id: number; name: string }[]
 }
 
 type Named = { name: string }
@@ -43,6 +45,24 @@ type ApiSpecies = {
   genera: (Lang & { genus: string })[]
   flavor_text_entries: (Lang & { flavor_text: string })[]
   habitat: Named | null
+  evolution_chain: { url: string }
+}
+
+type ApiChain = { species: Named & { url: string }; evolves_to: ApiChain[] }
+
+const idFromUrl = (url: string) => Number(url.split('/').at(-2))
+
+// Cadena evolutiva aplanada (solo Kanto, 1–151)
+async function getEvolution(url: string) {
+  const { chain }: { chain: ApiChain } = await fetch(url).then(r => r.json())
+  const out: { id: number; name: string }[] = []
+  const walk = (c: ApiChain) => {
+    const id = idFromUrl(c.species.url)
+    if (id <= 151) out.push({ id, name: c.species.name })
+    c.evolves_to.forEach(walk)
+  }
+  walk(chain)
+  return out
 }
 
 const es = <T extends Lang>(arr: T[]) => arr.find(x => x.language.name === 'es')
@@ -52,6 +72,7 @@ export async function getPokemon(id: number): Promise<PokemonDetail> {
     fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r => r.json()),
     fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`).then(r => r.json()),
   ])
+  const evolutionP = getEvolution(s.evolution_chain.url).catch(() => [])
   const abilities = await Promise.all(
   p.abilities.map(async a => {
     const ab: { names: (Lang & { name: string })[] } = await fetch(a.ability.url).then(r => r.json())
@@ -71,5 +92,7 @@ export async function getPokemon(id: number): Promise<PokemonDetail> {
     genus: es(s.genera)?.genus ?? '',
     description: (es(s.flavor_text_entries)?.flavor_text ?? '').replace(/\s+/g, ' '),
     habitat: s.habitat?.name ?? 'desconocido',
+    shiny: `${ART}/shiny/${id}.png`,
+    evolution: await evolutionP,
   }
 }

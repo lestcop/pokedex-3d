@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'motion/react'
-import { ArrowLeft, Volume2, ChevronLeft, ChevronRight, BookOpen, BarChart3, Sparkles, EyeOff, Heart } from 'lucide-react'
+import { ArrowLeft, Volume2, ChevronLeft, ChevronRight, BookOpen, BarChart3, Sparkles, EyeOff, Heart, Zap, GitBranch, Shield } from 'lucide-react'
 import { getPokemon } from '../api/pokemon'
-import { TYPE_INFO, HABITAT_ES } from '../data/types'
+import { TYPE_INFO, HABITAT_ES, defenses } from '../data/types'
 import { useFavorites } from '../hooks/useFavorites'
 import Pokeball from './Pokeball'
 
@@ -14,13 +14,17 @@ const STAT: Record<string, string> = {
 const TABS = [
   { id: 'Info', icon: BookOpen },
   { id: 'Stats', icon: BarChart3 },
-  { id: 'Habilidades', icon: Sparkles },
+  { id: 'Habilidades', icon: Zap },
+  { id: 'Evolución', icon: GitBranch },
+  { id: 'Tipos', icon: Shield },
 ] as const
 type Tab = (typeof TABS)[number]['id']
 type Poke = Awaited<ReturnType<typeof getPokemon>>
 
 const EASE = [0.32, 0.72, 0, 1] as const
 const soft = (color: string, pct = 80) => `color-mix(in oklab, ${color} ${pct}%, #faf9f5)`
+const ART = (id: number) =>
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
 const pad = (n: number) => String(n).padStart(3, '0')
 const valid = (n: number) => n >= 1 && n <= 151
 
@@ -38,14 +42,39 @@ function useOffset() {
 
 type Nav = { onClose: () => void; onNav: (id: number) => void }
 
+const fmt = (m: number) => (m === 4 ? '×4' : m === 2 ? '×2' : m === 0.5 ? '×½' : m === 0.25 ? '×¼' : '×0')
+
+function Chips({ list }: { list: { type: string; mult: number }[] }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {list.map(d => (
+        <span
+          key={d.type}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs"
+          style={{ background: soft(TYPE_INFO[d.type].color, 35) }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: TYPE_INFO[d.type].color }} />
+          {TYPE_INFO[d.type].es}
+          <b className="font-semibold">{fmt(d.mult)}</b>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 /* Contenido completo de la ficha */
-function Detail({ p, onClose }: { p: Poke; onClose: () => void }) {
+function Detail({ p, onClose, onNav }: { p: Poke } & Nav) {
   const [tab, setTab] = useState<Tab>('Info')
+  const [shiny, setShiny] = useState(false)
   const { isFav, toggle } = useFavorites()
   const fav = isFav(p.id)
   const total = p.stats.reduce((a, s) => a + s.value, 0)
   const len = p.description.length
-  const descSize = len > 150 ? 'text-sm' : len > 110 ? 'text-[15px]' : 'text-base md:text-lg'
+  const descSize = len > 150 ? 'text-xs' : len > 110 ? 'text-sm' : 'text-[15px] md:text-base'
+  const defs = defenses(p.types)
+  const weak = defs.filter(d => d.mult > 1).sort((a, b) => b.mult - a.mult)
+  const resist = defs.filter(d => d.mult > 0 && d.mult < 1).sort((a, b) => a.mult - b.mult)
+  const immune = defs.filter(d => d.mult === 0)
 
   return (
     <>
@@ -60,13 +89,25 @@ function Detail({ p, onClose }: { p: Poke; onClose: () => void }) {
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
             Volver
           </button>
-          <button
-            onClick={() => toggle(p.id)}
-            aria-label={fav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-            className="grid place-items-center w-9 h-9 rounded-full bg-paper/50 hover:bg-paper active:scale-90 transition-all"
-          >
-            <Heart className={`w-4.5 h-4.5 transition-colors ${fav ? 'fill-clay text-clay' : 'text-ink/60'}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShiny(v => !v)}
+              aria-label="Ver versión shiny"
+              title="Shiny"
+              className={`grid place-items-center w-9 h-9 rounded-full active:scale-90 transition-all ${
+                shiny ? 'bg-ink text-[#f7d02c]' : 'bg-paper/50 hover:bg-paper text-ink/60'
+              }`}
+            >
+              <Sparkles className="w-4.5 h-4.5" />
+            </button>
+            <button
+              onClick={() => toggle(p.id)}
+              aria-label={fav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+              className="grid place-items-center w-9 h-9 rounded-full bg-paper/50 hover:bg-paper active:scale-90 transition-all"
+            >
+              <Heart className={`w-4.5 h-4.5 transition-colors ${fav ? 'fill-clay text-clay' : 'text-ink/60'}`} />
+            </button>
+          </div>
         </div>
 
         <div className="relative flex justify-between items-end mt-3">
@@ -91,34 +132,42 @@ function Detail({ p, onClose }: { p: Poke; onClose: () => void }) {
           </button>
         </div>
 
-        <img
-          src={p.image}
-          alt={p.name}
-          className="relative z-10 mx-auto w-36 h-36 -mb-8 md:w-52 md:h-52 md:-mb-10 object-contain drop-shadow-xl"
-        />
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.img
+            key={shiny ? 'shiny' : 'normal'}
+            src={shiny ? p.shiny : p.image}
+            alt={p.name}
+            initial={{ opacity: 0, scale: 0.9, filter: 'blur(6px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, scale: 1.05, filter: 'blur(6px)' }}
+            transition={{ duration: 0.25 }}
+            className="relative z-10 mx-auto w-36 h-36 [@media(max-height:700px)]:w-24 [@media(max-height:700px)]:h-24 -mb-8 md:w-44 md:h-44 md:-mb-8 object-contain drop-shadow-xl"
+          />
+        </AnimatePresence>
       </div>
 
-      <div className="bg-paper rounded-4xl px-6 pt-10 md:pt-12 pb-6 min-h-full">
-        <div className="flex gap-6 border-b border-line mb-5">
+      <div className="bg-paper rounded-4xl px-6 pt-10 [@media(max-height:700px)]:pt-7 pb-5 flex-1">
+        <div className="flex justify-between border-b border-line mb-5 [@media(max-height:700px)]:mb-3">
           {TABS.map(({ id: t, icon: Icon }) => (
             <button
               key={t}
               onClick={() => setTab(t)}
+              title={t}
               className={`inline-flex items-center gap-1.5 pb-3 -mb-px text-sm border-b-2 transition-colors ${
                 tab === t ? 'border-clay text-ink font-medium' : 'border-transparent text-muted hover:text-ink'
               }`}
             >
               <Icon className="w-4 h-4" />
-              {t}
+              <span className={tab === t ? '' : 'hidden'}>{t}</span>
             </button>
           ))}
         </div>
 
-        <div key={tab} className="fade h-64 overflow-hidden">
+        <div key={tab} className="fade h-56 [@media(max-height:700px)]:h-44 overflow-hidden">
           {tab === 'Info' && (
             <div>
-              <p className={`font-serif ${descSize} leading-relaxed mb-5`}>{p.description}</p>
-              <dl className="grid grid-cols-[7rem_1fr] gap-y-3 text-sm">
+              <p className={`font-serif ${descSize} leading-snug mb-3 [@media(max-height:700px)]:text-sm [@media(max-height:700px)]:mb-2`}>{p.description}</p>
+              <dl className="grid grid-cols-[7rem_1fr] gap-y-1.5 [@media(max-height:700px)]:gap-y-0.5 text-sm [@media(max-height:700px)]:text-xs">
                 <dt className="text-muted">Especie</dt><dd>{p.genus}</dd>
                 <dt className="text-muted">Altura</dt><dd>{p.height} m</dd>
                 <dt className="text-muted">Peso</dt><dd>{p.weight} kg</dd>
@@ -129,15 +178,18 @@ function Detail({ p, onClose }: { p: Poke; onClose: () => void }) {
           )}
 
           {tab === 'Stats' && (
-            <div className="space-y-3">
-              {p.stats.map(s => (
+            <div className="space-y-2.5">
+              {p.stats.map((s, i) => (
                 <div key={s.name} className="flex items-center gap-3 text-sm">
                   <span className="w-20 text-muted">{STAT[s.name]}</span>
                   <span className="w-8 text-right font-medium">{s.value}</span>
-                  <div className="flex-1 h-1.5 bg-line rounded-full">
-                    <div
+                  <div className="flex-1 h-1.5 bg-line rounded-full overflow-hidden">
+                    <motion.div
                       className="h-1.5 rounded-full"
-                      style={{ width: `${Math.min(s.value, 150) / 1.5}%`, background: s.value >= 60 ? '#788c5d' : '#d97757' }}
+                      style={{ background: s.value >= 60 ? '#788c5d' : '#d97757' }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(s.value, 150) / 1.5}%` }}
+                      transition={{ duration: 0.7, delay: i * 0.06, ease: EASE }}
                     />
                   </div>
                 </div>
@@ -162,6 +214,52 @@ function Detail({ p, onClose }: { p: Poke; onClose: () => void }) {
                 </li>
               ))}
             </ul>
+          )}
+
+          {tab === 'Evolución' && (
+            p.evolution.length <= 1 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center">
+                <GitBranch className="w-8 h-8 text-clay" strokeWidth={1.5} />
+                <p className="mt-3 font-serif text-lg">Este Pokémon no evoluciona</p>
+              </div>
+            ) : (
+              <div className="h-full flex flex-wrap items-center justify-center gap-1">
+                {p.evolution.map((e, i) => (
+                  <div key={e.id} className="flex items-center gap-1">
+                    {i > 0 && <ChevronRight className="w-4 h-4 text-muted" />}
+                    <button
+                      onClick={() => e.id !== p.id && onNav(e.id)}
+                      className={`flex flex-col items-center rounded-2xl px-2 py-2 transition-all ${
+                        e.id === p.id ? 'bg-sand' : 'hover:bg-sand active:scale-95'
+                      }`}
+                    >
+                      <img src={ART(e.id)} alt={e.name} className="w-16 h-16 md:w-20 md:h-20 object-contain" />
+                      <span className="text-xs capitalize mt-1">{e.name}</span>
+                      <span className="text-[10px] text-muted">#{pad(e.id)}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {tab === 'Tipos' && (
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="text-xs uppercase tracking-[0.15em] text-muted mb-2">Débil contra</p>
+                {weak.length ? <Chips list={weak} /> : <p className="text-muted">Ninguno</p>}
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.15em] text-muted mb-2">Resiste</p>
+                {resist.length ? <Chips list={resist} /> : <p className="text-muted">Ninguno</p>}
+              </div>
+              {immune.length > 0 && (
+                <div>
+                  <p className="text-xs uppercase tracking-[0.15em] text-muted mb-2">Inmune a</p>
+                  <Chips list={immune} />
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -213,12 +311,12 @@ function DeckCard({ pid, role, first, off, onClose, onNav }: { pid: number; role
 
       {/* Cara frontal: la ficha completa */}
       <motion.div
-        className={`no-scrollbar absolute inset-0 flex flex-col overflow-y-auto overflow-x-hidden ${isMain ? '' : 'pointer-events-none'}`}
+        className={`no-scrollbar absolute inset-0 flex flex-col overflow-hidden ${isMain ? '' : 'pointer-events-none'}`}
         animate={{ opacity: isMain ? 1 : 0 }}
         transition={{ duration: 0.3, delay: isMain ? 0.15 : 0 }}
       >
         {p ? (
-          <Detail p={p} onClose={onClose} />
+          <Detail p={p} onClose={onClose} onNav={onNav} />
         ) : (
           <div className="h-full flex items-center justify-center">
             <Pokeball className="w-12 h-12 text-clay animate-spin" />
@@ -252,6 +350,17 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
       })
     }
   }, [id, qc])
+
+  // Atajos: ← → para pasar, Esc para cerrar
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && valid(id - 1)) onNav(id - 1)
+      else if (e.key === 'ArrowRight' && valid(id + 1)) onNav(id + 1)
+      else if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [id, onNav, onClose])
 
   const deck = [id - 1, id, id + 1].filter(valid)
 
