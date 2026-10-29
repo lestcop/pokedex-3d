@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { getIdsByType } from './api/pokemon'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { AnimatePresence } from 'motion/react'
+import { Search, Compass, X, SearchX } from 'lucide-react'
+import { getIdsByType, getPokemon } from './api/pokemon'
 import { TYPE_INFO } from './data/types'
 import PokemonCard from './components/PokemonCard'
 import Pokeball from './components/Pokeball'
@@ -13,6 +16,7 @@ const ART = (id: number) =>
 const TYPES = Object.keys(TYPE_INFO)
 
 type Entry = { id: number; name: string }
+type Route = { page: 'landing' | 'pokedex'; id: number | null }
 
 async function getKanto(): Promise<Entry[]> {
   const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=151')
@@ -21,20 +25,63 @@ async function getKanto(): Promise<Entry[]> {
 }
 
 // Rutas por hash: ''  -> landing | #/pokedex -> lista | #/pokedex/25 -> detalle
-function parseHash() {
+function parseHash(): Route {
   const [, page, id] = window.location.hash.split('/')
-  return { page: page === 'pokedex' ? 'pokedex' : 'landing', id: id ? Number(id) : null }
+  const n = Number(id)
+  return {
+    page: page === 'pokedex' ? 'pokedex' : 'landing',
+    id: n >= 1 && n <= 151 ? n : null,
+  }
 }
 
+// Espera a que la imagen ya esté en caché para que no aparezca en blanco
+const loadImg = (src: string) =>
+  new Promise<void>(resolve => {
+    const img = new Image()
+    img.onload = img.onerror = () => resolve()
+    img.src = src
+  })
+
 function useRoute() {
+  const qc = useQueryClient()
   const [route, setRoute] = useState(parseHash)
+  const current = useRef(route)
+
   useEffect(() => {
-    const onChange = () => {
-      setRoute(parseHash())
+    const onChange = async () => {
+      const prev = current.current
+      const next = parseHash()
+      current.current = next
+
+      // Carga la carta y sus vecinas ANTES de mostrarlas: el mazo aparece completo
+      if (next.id) {
+        const ids = [next.id - 1, next.id, next.id + 1].filter(n => n >= 1 && n <= 151)
+        try {
+          const all = await Promise.all(
+            ids.map(n => qc.ensureQueryData({ queryKey: ['pokemon', n], queryFn: () => getPokemon(n) })),
+          )
+          await Promise.race([Promise.all(all.map(p => loadImg(p.image))), new Promise(r => setTimeout(r, 800))])
+        } catch {
+          /* si falla, cada carta muestra su propio estado de carga */
+        }
+        if (current.current !== next) return // el usuario ya fue a otro lado
+      }
+
+      // View Transition solo para landing ↔ Pokédex; el mazo lo anima Motion
+      if (prev.page !== next.page && document.startViewTransition) {
+        const root = document.documentElement
+        root.dataset.vt = 'page'
+        const t = document.startViewTransition(() => flushSync(() => setRoute(next)))
+        t.finished.finally(() => delete root.dataset.vt)
+      } else {
+        setRoute(next)
+      }
     }
+
     window.addEventListener('hashchange', onChange)
     return () => window.removeEventListener('hashchange', onChange)
-  }, [])
+  }, [qc])
+
   return route
 }
 
@@ -47,7 +94,7 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [type, setType] = useState<string | null>(null)
   const [world, setWorld] = useState(false)
-  const selected = route.id && route.id >= 1 && route.id <= 151 ? route.id : null
+  const selected = route.id
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -80,43 +127,57 @@ export default function App() {
 
   return (
     <main className="max-w-5xl mx-auto px-4 md:px-8 pb-16">
-      <nav className="flex justify-between items-center py-6">
-        <button onClick={() => go('')} className="font-serif text-2xl">
-          Pokelex<span className="text-clay">.</span>
+      <nav className="fade flex justify-between items-center py-6">
+        <button onClick={() => go('')} className="group inline-flex items-center gap-2 font-serif text-2xl">
+          <Pokeball className="w-6 h-6 text-clay transition-transform duration-500 group-hover:rotate-180" />
+          Pokelex<span className="text-clay -ml-2">.</span>
         </button>
         <button
           onClick={() => setWorld(true)}
           className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-ink text-sm hover:bg-ink hover:text-paper transition-colors"
         >
-          Explorar el mundo →
+          <Compass className="w-4 h-4" />
+          Explorar el mundo
         </button>
       </nav>
 
       <header className="pt-4 md:pt-8 pb-8">
-        <h1 className="font-serif text-5xl md:text-7xl tracking-tight">
+        <h1 className="rise font-serif text-5xl md:text-7xl tracking-tight">
           Pokédex<span className="text-clay">.</span>
         </h1>
-        <p className="mt-5 max-w-xl font-serif text-xl md:text-2xl leading-snug text-ink/80">
+        <p className="rise [animation-delay:80ms] mt-5 max-w-xl font-serif text-xl md:text-2xl leading-snug text-ink/80">
           Los 151 Pokémon de Kanto, <em className="text-clay not-italic">reimaginados</em> como un
           cuaderno de campo: busca, compara sus estadísticas y, desde la computadora,
           sal a encontrarlos en un mundo 3D.
         </p>
-        <p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted">
+        <p className="rise [animation-delay:160ms] mt-3 text-xs uppercase tracking-[0.2em] text-muted">
           Proyecto sin fines de lucro · Hecho con mucho ♥️
         </p>
       </header>
 
-      <input
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        placeholder="Buscar por nombre o número…"
-        className="w-full mb-4 rounded-full bg-sand border border-line px-5 py-3 outline-none focus:border-clay transition-colors"
-      />
+      <div className="rise [animation-delay:220ms] relative mb-4">
+        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar por nombre o número…"
+          className="w-full rounded-full bg-sand border border-line pl-12 pr-12 py-3 outline-none focus:border-clay focus:bg-paper transition-colors"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            aria-label="Limpiar búsqueda"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted hover:text-ink hover:bg-line transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
-      <div className="flex md:flex-wrap gap-2 overflow-x-auto md:overflow-visible pb-2 mb-8 -mx-4 px-4 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="rise [animation-delay:280ms] no-scrollbar flex md:flex-wrap gap-2 overflow-x-auto md:overflow-visible pb-2 mb-8 -mx-4 px-4 md:mx-0 md:px-0">
         <button
           onClick={() => setType(null)}
-          className={`shrink-0 px-4 py-1.5 rounded-full text-sm border transition-colors ${
+          className={`shrink-0 px-4 py-1.5 rounded-full text-sm border transition-all active:scale-95 ${
             type === null ? 'bg-ink text-paper border-ink' : 'border-line hover:border-ink'
           }`}
         >
@@ -128,7 +189,7 @@ export default function App() {
             <button
               key={t}
               onClick={() => setType(active ? null : t)}
-              className={`shrink-0 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm border transition-colors ${
+              className={`shrink-0 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm border transition-all active:scale-95 ${
                 active ? 'border-transparent' : 'border-line hover:border-ink'
               }`}
               style={active ? { background: soft(TYPE_INFO[t].color) } : undefined}
@@ -141,19 +202,26 @@ export default function App() {
       </div>
 
       {isLoading ? (
-        <p className="font-serif text-muted">Cargando…</p>
+        <div className="flex items-center gap-3 font-serif text-muted">
+          <Pokeball className="w-5 h-5 text-clay animate-spin" /> Cargando…
+        </div>
       ) : filtered.length === 0 ? (
-        <p className="font-serif text-muted">No encontramos ningún Pokémon 🔍</p>
+        <div className="fade flex flex-col items-center py-16 text-center">
+          <SearchX className="w-10 h-10 text-clay" strokeWidth={1.5} />
+          <p className="mt-4 font-serif text-2xl">No encontramos ese Pokémon</p>
+          <p className="mt-1 text-muted text-sm">Prueba con otro nombre, número o tipo.</p>
+        </div>
       ) : (
-        <ul className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          {filtered.map(p => {
+        <ul key={`${type}-${search}`} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {filtered.map((p, i) => {
             const types = typesMap?.get(p.id) ?? []
             const color = types[0] ? TYPE_INFO[types[0]].color : '#d97757'
             return (
-              <li key={p.id}>
+              <li key={p.id} className="rise" style={{ animationDelay: `${Math.min(i, 16) * 35}ms` }}>
                 <button
+                  data-poke={p.id}
                   onClick={() => go(`/pokedex/${p.id}`)}
-                  className="relative w-full h-32 md:h-36 overflow-hidden rounded-3xl p-4 text-left hover:-translate-y-0.5 transition-transform"
+                  className="group relative w-full h-32 md:h-36 overflow-hidden rounded-3xl p-4 text-left transition-[translate,box-shadow,scale] duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
                   style={{ background: soft(color) }}
                 >
                   <span className="absolute top-3 right-4 text-xs text-ink/50">
@@ -167,12 +235,12 @@ export default function App() {
                       </span>
                     ))}
                   </div>
-                  <Pokeball className="absolute -right-4 -bottom-4 w-28 md:w-32 text-paper/30" />
+                  <Pokeball className="absolute -right-4 -bottom-4 w-28 md:w-32 text-paper/30 transition-transform duration-700 group-hover:rotate-90" />
                   <img
                     src={ART(p.id)}
                     alt={p.name}
                     loading="lazy"
-                    className="absolute right-1 bottom-1 w-24 md:w-28 drop-shadow-lg"
+                    className="absolute right-1 bottom-1 w-24 md:w-28 drop-shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
                   />
                 </button>
               </li>
@@ -181,13 +249,16 @@ export default function App() {
         </ul>
       )}
 
-      {selected && (
-        <PokemonCard
-          id={selected}
-          onClose={() => go('/pokedex')}
-          onNav={id => go(`/pokedex/${id}`)}
-        />
-      )}
+      <AnimatePresence>
+        {selected && (
+          <PokemonCard
+            key="modal"
+            id={selected}
+            onClose={() => go('/pokedex')}
+            onNav={id => go(`/pokedex/${id}`)}
+          />
+        )}
+      </AnimatePresence>
 
       <footer className="mt-20 pt-8 border-t border-line text-sm text-muted">
         <div className="flex flex-col md:flex-row md:justify-between gap-6">
