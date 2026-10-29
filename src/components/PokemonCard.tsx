@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'motion/react'
-import { ArrowLeft, Volume2, ChevronLeft, ChevronRight, BookOpen, BarChart3, Sparkles, EyeOff } from 'lucide-react'
+import { ArrowLeft, Volume2, ChevronLeft, ChevronRight, BookOpen, BarChart3, Sparkles, EyeOff, Heart } from 'lucide-react'
 import { getPokemon } from '../api/pokemon'
 import { TYPE_INFO, HABITAT_ES } from '../data/types'
+import { useFavorites } from '../hooks/useFavorites'
 import Pokeball from './Pokeball'
 
 const STAT: Record<string, string> = {
@@ -40,6 +41,8 @@ type Nav = { onClose: () => void; onNav: (id: number) => void }
 /* Contenido completo de la ficha */
 function Detail({ p, onClose }: { p: Poke; onClose: () => void }) {
   const [tab, setTab] = useState<Tab>('Info')
+  const { isFav, toggle } = useFavorites()
+  const fav = isFav(p.id)
   const total = p.stats.reduce((a, s) => a + s.value, 0)
   const len = p.description.length
   const descSize = len > 150 ? 'text-sm' : len > 110 ? 'text-[15px]' : 'text-base md:text-lg'
@@ -49,7 +52,7 @@ function Detail({ p, onClose }: { p: Poke; onClose: () => void }) {
       <div className="relative px-6 pt-5">
         <Pokeball className="absolute -right-10 w-44 top-20 md:w-64 md:top-24 text-paper/30 animate-[spin_40s_linear_infinite]" />
 
-        <div className="relative text-sm">
+        <div className="relative flex items-center justify-between text-sm">
           <button
             onClick={onClose}
             className="group inline-flex items-center gap-1.5 text-ink/70 hover:text-ink transition-colors"
@@ -57,9 +60,16 @@ function Detail({ p, onClose }: { p: Poke; onClose: () => void }) {
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
             Volver
           </button>
+          <button
+            onClick={() => toggle(p.id)}
+            aria-label={fav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+            className="grid place-items-center w-9 h-9 rounded-full bg-paper/50 hover:bg-paper active:scale-90 transition-all"
+          >
+            <Heart className={`w-4.5 h-4.5 transition-colors ${fav ? 'fill-clay text-clay' : 'text-ink/60'}`} />
+          </button>
         </div>
 
-        <div className="relative flex justify-between items-end mt-4">
+        <div className="relative flex justify-between items-end mt-3">
           <h2 className="font-serif text-3xl md:text-4xl capitalize leading-none">{p.name}</h2>
           <span className="font-serif text-xl text-ink/60">#{pad(p.id)}</span>
         </div>

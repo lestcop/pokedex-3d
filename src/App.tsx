@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { AnimatePresence } from 'motion/react'
-import { Search, Compass, X, SearchX } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { Search, Compass, X, SearchX, Heart, ArrowUp } from 'lucide-react'
 import { getIdsByType, getPokemon } from './api/pokemon'
 import { TYPE_INFO } from './data/types'
+import { useFavorites } from './hooks/useFavorites'
 import PokemonCard from './components/PokemonCard'
 import Pokeball from './components/Pokeball'
 import World from './components/World'
@@ -85,14 +86,29 @@ function useRoute() {
   return route
 }
 
+// Muestra el botón "volver arriba" después de bajar un poco
+function useScrolled(limit = 600) {
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const f = () => setScrolled(window.scrollY > limit)
+    f()
+    window.addEventListener('scroll', f, { passive: true })
+    return () => window.removeEventListener('scroll', f)
+  }, [limit])
+  return scrolled
+}
+
 const go = (hash: string) => {
   window.location.hash = hash
 }
 
 export default function App() {
   const route = useRoute()
+  const { favs, isFav, toggle } = useFavorites()
+  const scrolled = useScrolled()
   const [search, setSearch] = useState('')
   const [type, setType] = useState<string | null>(null)
+  const [onlyFavs, setOnlyFavs] = useState(false)
   const [world, setWorld] = useState(false)
   const selected = route.id
 
@@ -118,9 +134,10 @@ export default function App() {
     return list.filter(p => {
       const okSearch = !q || p.name.includes(q) || String(p.id) === q.replace('#', '')
       const okType = !type || typesMap?.get(p.id)?.includes(type)
-      return okSearch && okType
+      const okFav = !onlyFavs || favs.includes(p.id)
+      return okSearch && okType && okFav
     })
-  }, [list, search, type, typesMap])
+  }, [list, search, type, typesMap, onlyFavs, favs])
 
   if (route.page === 'landing') return <Landing onEnter={() => go('/pokedex')} />
   if (world) return <World onExit={() => setWorld(false)} />
@@ -174,6 +191,7 @@ export default function App() {
         )}
       </div>
 
+      {/* Filtros: Todos · Favoritos · tipos */}
       <div className="rise [animation-delay:280ms] no-scrollbar flex md:flex-wrap gap-2 overflow-x-auto md:overflow-visible pb-2 mb-8 -mx-4 px-4 md:mx-0 md:px-0">
         <button
           onClick={() => setType(null)}
@@ -183,6 +201,16 @@ export default function App() {
         >
           Todos
         </button>
+        <button
+          onClick={() => setOnlyFavs(v => !v)}
+          className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm border transition-all active:scale-95 ${
+            onlyFavs ? 'bg-clay text-paper border-clay' : 'border-line hover:border-ink'
+          }`}
+        >
+          <Heart className={`w-3.5 h-3.5 ${onlyFavs ? 'fill-current' : 'text-clay'}`} />
+          Favoritos{favs.length > 0 && ` · ${favs.length}`}
+        </button>
+        <span className="shrink-0 w-px my-1 bg-line" />
         {TYPES.map(t => {
           const active = type === t
           return (
@@ -202,32 +230,51 @@ export default function App() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center gap-3 font-serif text-muted">
-          <Pokeball className="w-5 h-5 text-clay animate-spin" /> Cargando…
-        </div>
+        /* Skeletons: la forma de la lista mientras carga */
+        <ul className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {Array.from({ length: 12 }, (_, i) => (
+            <li
+              key={i}
+              className="h-32 md:h-36 rounded-3xl bg-sand border border-line p-4 animate-pulse"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="h-4 w-20 rounded-full bg-line" />
+              <div className="h-3 w-12 rounded-full bg-line mt-3" />
+              <div className="h-3 w-14 rounded-full bg-line mt-2" />
+            </li>
+          ))}
+        </ul>
       ) : filtered.length === 0 ? (
         <div className="fade flex flex-col items-center py-16 text-center">
-          <SearchX className="w-10 h-10 text-clay" strokeWidth={1.5} />
-          <p className="mt-4 font-serif text-2xl">No encontramos ese Pokémon</p>
-          <p className="mt-1 text-muted text-sm">Prueba con otro nombre, número o tipo.</p>
+          {onlyFavs && favs.length === 0 ? (
+            <>
+              <Heart className="w-10 h-10 text-clay" strokeWidth={1.5} />
+              <p className="mt-4 font-serif text-2xl">Aún no tienes favoritos</p>
+              <p className="mt-1 text-muted text-sm">Toca el corazón de un Pokémon para guardarlo aquí.</p>
+            </>
+          ) : (
+            <>
+              <SearchX className="w-10 h-10 text-clay" strokeWidth={1.5} />
+              <p className="mt-4 font-serif text-2xl">No encontramos ese Pokémon</p>
+              <p className="mt-1 text-muted text-sm">Prueba con otro nombre, número o tipo.</p>
+            </>
+          )}
         </div>
       ) : (
-        <ul key={`${type}-${search}`} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <ul key={`${type}-${search}-${onlyFavs}`} className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {filtered.map((p, i) => {
             const types = typesMap?.get(p.id) ?? []
             const color = types[0] ? TYPE_INFO[types[0]].color : '#d97757'
+            const fav = isFav(p.id)
             return (
-              <li key={p.id} className="rise" style={{ animationDelay: `${Math.min(i, 16) * 35}ms` }}>
+              <li key={p.id} className="rise relative" style={{ animationDelay: `${Math.min(i, 16) * 35}ms` }}>
                 <button
                   data-poke={p.id}
                   onClick={() => go(`/pokedex/${p.id}`)}
                   className="group relative w-full h-32 md:h-36 overflow-hidden rounded-3xl p-4 text-left transition-[translate,box-shadow,scale] duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
                   style={{ background: soft(color) }}
                 >
-                  <span className="absolute top-3 right-4 text-xs text-ink/50">
-                    #{String(p.id).padStart(3, '0')}
-                  </span>
-                  <h3 className="font-serif text-lg capitalize">{p.name}</h3>
+                  <h3 className="font-serif text-lg capitalize pr-16">{p.name}</h3>
                   <div className="flex flex-col items-start gap-1 mt-1">
                     {types.map(t => (
                       <span key={t} className="px-2.5 py-0.5 rounded-full bg-paper/50 text-xs">
@@ -243,6 +290,19 @@ export default function App() {
                     className="absolute right-1 bottom-1 w-24 md:w-28 drop-shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
                   />
                 </button>
+                {/* Número + corazón arriba a la derecha (fuera del botón para no abrir la ficha) */}
+                <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+                  <span className="text-xs text-ink/50 pointer-events-none">
+                    #{String(p.id).padStart(3, '0')}
+                  </span>
+                  <button
+                    onClick={() => toggle(p.id)}
+                    aria-label={fav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                    className="grid place-items-center w-7 h-7 rounded-full hover:bg-paper/60 active:scale-90 transition-all"
+                  >
+                    <Heart className={`w-4 h-4 transition-colors ${fav ? 'fill-clay text-clay' : 'text-ink/50'}`} />
+                  </button>
+                </div>
               </li>
             )
           })}
@@ -257,6 +317,23 @@ export default function App() {
             onClose={() => go('/pokedex')}
             onNav={id => go(`/pokedex/${id}`)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Volver arriba */}
+      <AnimatePresence>
+        {scrolled && !selected && (
+          <motion.button
+            initial={{ opacity: 0, y: 16, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.9 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label="Volver arriba"
+            className="fixed right-5 bottom-5 md:right-8 md:bottom-8 z-5 grid place-items-center w-12 h-12 rounded-full bg-ink text-paper shadow-xl hover:bg-clay active:scale-90 transition-colors"
+          >
+            <ArrowUp className="w-5 h-5" />
+          </motion.button>
         )}
       </AnimatePresence>
 
