@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'motion/react'
 import { Search, Compass, X, SearchX, Heart, ArrowUp } from 'lucide-react'
+import ThemeToggle from './components/ThemeToggle'
 import { getIdsByType, getPokemon } from './api/pokemon'
 import { TYPE_INFO } from './data/types'
 import { useFavorites } from './hooks/useFavorites'
@@ -11,7 +12,7 @@ import Pokeball from './components/Pokeball'
 import World from './components/World'
 import Landing from './components/Landing'
 
-const soft = (color: string, pct = 50) => `color-mix(in oklab, ${color} ${pct}%, #faf9f5)`
+const soft = (color: string, pct = 50) => `color-mix(in oklab, ${color} var(--card-mix, ${pct}%), var(--card-base, var(--color-paper)))`
 const ART = (id: number) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
 const TYPES = Object.keys(TYPE_INFO)
@@ -149,6 +150,8 @@ export default function App() {
           <Pokeball className="w-6 h-6 text-clay transition-transform duration-500 group-hover:rotate-180" />
           Pokelex<span className="text-clay -ml-2">.</span>
         </button>
+        <div className="flex items-center gap-2">
+        <ThemeToggle />
         <button
           onClick={() => setWorld(true)}
           className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-ink text-sm hover:bg-ink hover:text-paper transition-colors"
@@ -156,6 +159,7 @@ export default function App() {
           <Compass className="w-4 h-4" />
           Explorar el mundo
         </button>
+        </div>
       </nav>
 
       <header className="pt-4 md:pt-8 pb-8">

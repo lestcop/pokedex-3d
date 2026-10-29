@@ -13,6 +13,13 @@
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" />
     <meta name="twitter:card" content="summary_large_image" />
+      <script>
+      try {
+        const t = localStorage.getItem('pokelex:theme')
+        if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches))
+          document.documentElement.classList.add('dark')
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

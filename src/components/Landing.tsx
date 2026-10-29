@@ -1,4 +1,5 @@
 import Pokeball from './Pokeball'
+import ThemeToggle from './ThemeToggle'
 
 const ART = (id: number) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
@@ -18,9 +19,12 @@ export default function Landing({ onEnter }: Props) {
         <span className="font-serif text-2xl">
           Pokelex<span className="text-clay">.</span>
         </span>
-        <button onClick={onEnter} className="text-sm hover:text-clay transition-colors">
-          Abrir Pokédex →
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={onEnter} className="text-sm hover:text-clay transition-colors">
+            Abrir Pokédex →
+          </button>
+          <ThemeToggle />
+        </div>
       </nav>
 
       <section className="relative flex-1 grid md:grid-cols-[1.2fr_1fr] items-center gap-10 py-10 md:py-20">

@@ -1,6 +1,6 @@
 <div align="center">
 
-# Pokédex<span>.</span>
+# Pokelex<span>.</span>
 
 **Los 151 Pokémon de Kanto, reimaginados como un cuaderno de campo.**
 Busca, compara sus estadísticas y, desde la computadora, sal a encontrarlos en un mundo 3D.
@@ -26,13 +26,19 @@ Una Pokédex con estilo **editorial cálido**: papel crema, tinta oscura, un sol
 | Ficha con descripción, stats y habilidades | Modelos 3D de Pokémon con animación |
 | Grito de cada Pokémon 🔊 | Controles WASD, cámara en tercera persona y colisiones |
 
-🔗 **[Ver en vivo →](https://pokedex-3d-one.vercel.app)**
+🔗 **[Ver en vivo →](https://pokelex.vercel.app)**
 
 ## 🧩 Funcionalidades
 
+- 🏠 Portada editorial antes de entrar a la Pokédex
 - 🔍 Búsqueda por nombre o número
-- 🏷️ Filtro por los 18 tipos, cada uno con su color
-- 📖 Ficha con pestañas: **Info**, **Stats** y **Habilidades**
+- 🏷️ Filtro por tipo, cada uno con su color
+- ❤️ Favoritos guardados en el navegador, con su propio filtro
+- 🃏 Ficha en forma de mazo: el anterior y el siguiente asoman detrás y se precargan
+- 📖 Pestañas **Info**, **Stats** (barras animadas), **Habilidades**, **Evolución** y **Tipos** (debilidades, resistencias e inmunidades)
+- ✨ Versión shiny de cada Pokémon
+- ⌨️ Atajos: ← → para pasar de Pokémon, Esc para cerrar
+- 🌙 Modo oscuro cálido, que recuerda tu elección
 - 🌍 Mundo 3D con Pokémon salvajes en su hábitat (solo en computadora)
 - 🎯 *Próximamente:* escanear y capturar Pokémon y guardar el progreso
 
@@ -41,6 +47,7 @@ Una Pokédex con estilo **editorial cálido**: papel crema, tinta oscura, un sol
 - **React + TypeScript + Vite**
 - **Tailwind CSS v4** con tokens propios (`paper`, `ink`, `clay`…)
 - **TanStack Query** para los datos y la caché
+- **Motion** y **lucide-react** para animaciones e íconos
 - **React Three Fiber + drei** para el mundo 3D
 - Tipografías **Fraunces** e **Inter**
 
@@ -59,6 +66,7 @@ pnpm dev
 - [x] Fase 2 · Ficha con visor 3D
 - [x] Fase 3 · Mundo explorable, controles y colisiones
 - [x] Rediseño editorial cálido
+- [x] Portada, favoritos, ficha en mazo, evoluciones, tipos, shiny y modo oscuro
 - [ ] Fase 4 · Escanear, capturar y guardar progreso (Zustand + Supabase)
 
 ## 🙏 Créditos

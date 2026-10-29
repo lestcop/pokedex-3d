@@ -22,7 +22,7 @@ type Tab = (typeof TABS)[number]['id']
 type Poke = Awaited<ReturnType<typeof getPokemon>>
 
 const EASE = [0.32, 0.72, 0, 1] as const
-const soft = (color: string, pct = 80) => `color-mix(in oklab, ${color} ${pct}%, #faf9f5)`
+const soft = (color: string, pct = 80) => `color-mix(in oklab, ${color} var(--card-mix, ${pct}%), var(--card-base, var(--color-paper)))`
 const ART = (id: number) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
 const pad = (n: number) => String(n).padStart(3, '0')
@@ -366,7 +366,7 @@ export default function PokemonCard({ id, onClose, onNav }: Props) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-10 flex flex-col items-center justify-center gap-5 p-4 bg-ink/50"
+      className="fixed inset-0 z-10 flex flex-col items-center justify-center gap-5 p-4 bg-black/50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.3, delay: 0.1 } }}
